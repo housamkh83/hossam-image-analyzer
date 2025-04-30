@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محلل البرومبت من الصور</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-top: 40px;
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        #imagePreview {
+            max-width: 100%;
+            margin: 20px 0;
+            display: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #promptResult {
+            margin: 20px 0;
+            display: none;
+        }
+        .options-panel {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .style-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .style-option {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            padding: 8px 15px;
+            border: 2px solid #007bff;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .style-option.active {
+            background: linear-gradient(45deg, #007bff, #00d2ff);
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+        .result-box {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .copy-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            box-shadow: 0 2px 5px rgba(40,167,69,0.2);
+            transition: all 0.3s ease;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+        .loading {
+            background: linear-gradient(-45deg, #fff3cd, #ffeeba);
+            background-size: 200% 200%;
+            animation: gradient 2s ease infinite;
+            display: inline-block;
+            padding: 10px 20px;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            color: #856404;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            text-align: center;
+            position: relative;
+        }
+        h1::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #007bff, #00d2ff);
+            margin: 15px auto;
+            border-radius: 2px;
+        }
+        .style-option:hover {
+            transform: translateY(-2px);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #promptResult {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .prompt-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .clear-btn {
+            background: linear-gradient(45deg, #dc3545, #ff6b6b);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(220,53,69,0.2);
+        }
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+        }
+        .prompt-details {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .prompt-category {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .prompt-category h4 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        .tag-section {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .tag-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .tag-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tag-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .tag.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .tag.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .tags-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .tags-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .add-tag-btn {
+            background: linear-gradient(45deg, #007bff, #00d2ff);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .add-tag-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+        }
+        #tagsDisplay {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tag:hover {
+            background: #dee2e6;
+            transform: translateY(-1px);
+        }
+        .tag i {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+        .tag i:hover {
+            opacity: 1;
+            color: #dc3545;
+        }
+        .negative-prompt {
+            background: #fff1f1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #ffcdd2;
+        }
+        .negative-prompt h4 {
+            color: #d32f2f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .negative-tags-container {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .negative-tag {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .negative-tag:hover {
+            background: #ffcdd2;
+        }
+        .negative-add-btn {
+            background: linear-gradient(45deg, #d32f2f, #ff5252);
+        }
+        .negative-add-btn:hover {
+            box-shadow: 0 2px 8px rgba(211,47,47,0.3);
+        }
+        .prompt-separator {
+            border-top: 2px dashed #dee2e6;
+            margin: 20px 0;
+            position: relative;
+        }
+        .prompt-separator::after {
+            content: 'أو';
+            position: absolute;
+            top: -10px;
+            right: 50%;
+            transform: translateX(50%);
+            background: #fff;
+            padding: 0 10px;
+            color: #6c757d;
+        }
+        .suggestion-chip {
+            display: inline-block;
+            padding: 4px 12px;
+            margin: 3px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-chip:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .tag-suggestions {
+            margin-top: 10px;
+            padding: 5px;
+            border-top: 1px solid #e9ecef;
+        }
+    </style>
+	
+</head>
+<body>
+    <div class="container">
+        <h1>محلل البرومبت من الصور</h1>
+        <p>قم برفع صورة وسنقوم باستخراج البرومبت المناسب لها</p>
+        
+        <div class="upload-area" id="dropZone">
+            <p>اسحب الصورة هنا أو اضغط للاختيار</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+
+        <img id="imagePreview" alt="معاينة الصورة">
+        
+        <div class="options-panel" id="optionsPanel" style="display: none;">
+            <h3>خيارات الوصف</h3>
+            <div class="style-options">
+                <div class="style-option active" data-style="artistic">
+                    <i class="fas fa-paint-brush"></i> فني
+                </div>
+                <div class="style-option" data-style="technical">
+                    <i class="fas fa-cog"></i> تقني
+                </div>
+                <div class="style-option" data-style="story">
+                    <i class="fas fa-book"></i> قصصي
+                </div>
+                <div class="style-option" data-style="detailed">
+                    <i class="fas fa-search-plus"></i> تفصيلي
+                </div>
+            </div>
+
+            <div class="prompt-details">
+                <div class="prompt-category">
+                    <h4><i class="fas fa-palette"></i> جودة الصورة</h4>
+                    <input type="range" class="quality-slider" min="1" max="100" value="85">
+                    <span class="quality-value">85%</span>
+                </div>
+
+                <div class="tag-section">
+                    <div class="tag-header">
+                        <h4><i class="fas fa-tags"></i> الكلمات المفتاحية</h4>
+                    </div>
+                    <div class="tag-input-group">
+                        <input type="text" id="tagInput" placeholder="أضف كلمة مفتاحية" class="tag-input">
+                        <button onclick="addTag()" class="add-tag-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="tagsDisplay">
+                        <span class="tag positive" onclick="removeTag(this)">جودة عالية <i class="fas fa-times"></i></span>
+                        <span class="tag positive" onclick="removeTag(this)">8K <i class="fas fa-times"></i></span>
+                        <span class="tag positive" onclick="removeTag(this)">تفاصيل دقيقة <i class="fas fa-times"></i></span>
+                        <span class="tag positive" onclick="removeTag(this)">واقعي <i class="fas fa-times"></i></span>
+                    </div>
+                    <div class="tag-suggestions">
+                        <span class="suggestion-chip" onclick="addSuggestedTag('high quality')">high quality</span>
+                        <span class="suggestion-chip" onclick="addSuggestedTag('detailed')">detailed</span>
+                        <span class="suggestion-chip" onclick="addSuggestedTag('4k')">4k</span>
+                        <span class="suggestion-chip" onclick="addSuggestedTag('professional')">professional</span>
+                        <span class="suggestion-chip" onclick="addSuggestedTag('masterpiece')">masterpiece</span>
+                    </div>
+                </div>
+
+                <div class="tag-section">
+                    <div class="tag-header">
+                        <h4><i class="fas fa-ban"></i> الوصف السلبي (ما لا تريده في الصورة)</h4>
+                    </div>
+                    <div class="tag-input-group">
+                        <input type="text" id="negativeTagInput" placeholder="أضف كلمة للاستبعاد" class="tag-input">
+                        <button onclick="addNegativeTag()" class="add-tag-btn negative-add-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div id="negativeTagsDisplay">
+                        <span class="tag negative" onclick="removeTag(this)">تشويش <i class="fas fa-times"></i></span>
+                        <span class="tag negative" onclick="removeTag(this)">ضبابية <i class="fas fa-times"></i></span>
+                        <span class="tag negative" onclick="removeTag(this)">تشوه <i class="fas fa-times"></i></span>
+                    </div>
+                    <div class="tag-suggestions">
+                        <span class="suggestion-chip" onclick="addSuggestedNegativeTag('blur')">blur</span>
+                        <span class="suggestion-chip" onclick="addSuggestedNegativeTag('bad quality')">bad quality</span>
+                        <span class="suggestion-chip" onclick="addSuggestedNegativeTag('watermark')">watermark</span>
+                        <span class="suggestion-chip" onclick="addSuggestedNegativeTag('noise')">noise</span>
+                        <span class="suggestion-chip" onclick="addSuggestedNegativeTag('deformed')">deformed</span>
+                    </div>
+                </div>
+
+                <div class="detail-options">
+                    <label>
+                        <input type="checkbox" id="includeColors" checked> تضمين وصف الألوان
+                    </label>
+                    <label>
+                        <input type="checkbox" id="includeLighting" checked> تضمين وصف الإضاءة
+                    </label>
+                    <label>
+                        <input type="checkbox" id="includeComposition" checked> تضمين وصف التكوين
+                    </label>
+                    <label>
+                        <input type="checkbox" id="includeStyle" checked> تضمين الأسلوب الفني
+                    </label>
+                </div>
+
+                <div class="prompt-separator"></div>
+
+            </div>
+        </div>
+
+        <div id="promptResult"></div>
+        <div class="prompt-controls">
+            <button class="copy-btn" onclick="copyPrompt()">
+                <i class="fas fa-copy"></i> نسخ البرومبت
+            </button>
+            <button class="clear-btn" onclick="clearAll()">
+                <i class="fas fa-trash-alt"></i> مسح الكل
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#8B2E1D';
+        ctx.fillRect(0, 0, 64, 64);
+
+        ctx.fillStyle = '#E8D1B7';
+        ctx.font = 'bold 28px Cairo';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('KH', 32, 32);
+
+        const link = document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = canvas.toDataURL('image/x-icon');
+        document.head.appendChild(link);
+
+        function clearAll() {
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('promptResult').style.display = 'none';
+            document.getElementById('promptResult').innerHTML = '';
+            document.getElementById('optionsPanel').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('negativeTagInput').value = '';
+            document.getElementById('negativeTagsDisplay').innerHTML = '';
+        }
+
+        document.querySelector('.quality-slider').addEventListener('input', function(e) {
+            document.querySelector('.quality-value').textContent = e.target.value + '%';
+        });
+
+        function addTag() {
+            const input = document.getElementById('tagInput');
+            const tag = input.value.trim();
+            
+            if (tag) {
+                const tagsDisplay = document.getElementById('tagsDisplay');
+                const newTag = document.createElement('span');
+                newTag.className = 'tag positive';
+                newTag.onclick = function() { removeTag(this); };
+                newTag.innerHTML = `${tag} <i class="fas fa-times"></i>`;
+                tagsDisplay.appendChild(newTag);
+                input.value = '';
+            }
+        }
+
+        function removeTag(element) {
+            element.remove();
+        }
+
+        document.getElementById('tagInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTag();
+            }
+        });
+
+        function getSelectedTags() {
+            const tags = document.querySelectorAll('.tag');
+            return Array.from(tags).map(tag => tag.textContent.trim());
+        }
+
+        function addNegativeTag() {
+            const input = document.getElementById('negativeTagInput');
+            const tag = input.value.trim();
+            
+            if (tag) {
+                const tagsDisplay = document.getElementById('negativeTagsDisplay');
+                const newTag = document.createElement('span');
+                newTag.className = 'tag negative';
+                newTag.onclick = function() { removeTag(this); };
+                newTag.innerHTML = `${tag} <i class="fas fa-times"></i>`;
+                tagsDisplay.appendChild(newTag);
+                input.value = '';
+            }
+        }
+
+        document.getElementById('negativeTagInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addNegativeTag();
+            }
+        });
+
+        function getNegativeTags() {
+            const tags = document.querySelectorAll('.negative-tag');
+            return Array.from(tags).map(tag => tag.textContent.trim());
+        }
+
+        function addSuggestedTag(tag) {
+            document.getElementById('tagInput').value = tag;
+            addTag();
+        }
+
+        function addSuggestedNegativeTag(tag) {
+            document.getElementById('negativeTagInput').value = tag;
+            addNegativeTag();
+        }
+    </script>
+    <div class="footer">
+            جميع الحقوق محفوظة 2024 المبرمج حسام فضل قدور
+        </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</body>
+</html>
